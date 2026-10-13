@@ -289,11 +289,20 @@ function printHuman(command, result) {
       `端口 ${result.port} · 壁纸 ${result.wallpaperCount} 项 · 当前：${result.activeName ?? "无"}\n` +
         `配色 ${result.config.palette.label} · 玻璃 ${result.config.glass}% · 适配 ${result.config.mode}\n`,
     );
-    for (const page of result.pages) {
+    // 主窗口排前面、设置窗口排后面并标注出来。
+    // 设置窗口本来就不该有任何注入（我们让它保持原生），不区分的话
+    // 它一旦排在前面，status 看起来就像"壁纸根本没生效"。
+    const pages = [...result.pages].sort(
+      (a, b) => Number(Boolean(a.settingsWindow)) - Number(Boolean(b.settingsWindow)),
+    );
+    for (const page of pages) {
+      if (page.error) {
+        process.stdout.write(`  页面不可用：${page.error}\n`);
+        continue;
+      }
+      const tag = page.settingsWindow ? "（设置窗口 · 保持原生）" : "";
       process.stdout.write(
-        page.error
-          ? `  页面不可用：${page.error}\n`
-          : `  面板样式=${page.panelStyle} 壁纸样式=${page.skinStyle} 媒体层=${page.media} 当前=${page.activeId ?? "无"}\n`,
+        `  ${tag}面板样式=${page.panelStyle} 壁纸样式=${page.skinStyle} 媒体层=${page.media} 当前=${page.activeId ?? "无"}\n`,
       );
     }
     return;

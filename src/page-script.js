@@ -45,6 +45,17 @@
      必须明确告诉用户，不能让他以为是「慢」。 */
   const HOST_BEAT_TIMEOUT_MS = 3000;
 
+  // WorkBuddy 的「设置」是一个**独立渲染窗口**，body 上带 settings-window 类。
+  // 壁纸/玻璃注入进去是合理的（设置窗口也有壁纸），但很多"只该在主窗口做"的事
+  // 必须靠它区分开 —— 比如放浮动按钮、按焦点判断是否暂停播放。
+  // 双判据：类名 + 结构锚点（.settings-window-root），任一中就认。
+  function isSettingsWindow() {
+    return (
+      document.body.classList.contains("settings-window") ||
+      Boolean(document.querySelector(".settings-window-root"))
+    );
+  }
+
   function hostAlive() {
     return typeof NS.lastBeat === "number" && Date.now() - NS.lastBeat < HOST_BEAT_TIMEOUT_MS;
   }
@@ -231,6 +242,21 @@
     return host;
   }
 
+  // 壁纸图层淡入。
+  // 为什么需要：直接出现会「啪」地闪一下 —— 主窗口启动时壁纸层建得比界面早，
+  // 中间有一段只有壁纸。淡入让这个过渡平顺，不再像"闪"。
+  function revealMediaWhenReady(host) {
+    if (!host) return;
+    host.style.transition = "opacity 420ms ease";
+    host.style.opacity = "0";
+    // 两帧后再翻到 1：确保 opacity:0 已经渲染过一次，过渡才会真正跑起来
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        host.style.opacity = "1";
+      });
+    });
+  }
+
   function applyMedia() {
     const state = NS.state;
     const host = ensureMediaHost();
@@ -260,6 +286,7 @@
         }
         host.appendChild(element);
         NS.mediaEl = element;
+        revealMediaWhenReady(host);
       }
       NS.mediaId = key;
     }
@@ -270,6 +297,15 @@
         "brightness(" + state.brightness + "%) saturate(" + state.saturation + "%)";
     }
     host.classList.toggle("is-hidden", !active);
+  }
+
+  // 选一个"有内容"的时间点当静止帧。
+  // 实测某个壁纸：0.2s 亮度 1（全黑）、1.06s 只有 12、3.5s 才到 48、5.5s 到 51。
+  // 所以取**中段**而不是按比例取开头 —— 取开头常常落在黑场里，
+  // 看起来就像"壁纸没加载出来"。
+  function stillFrameTime(duration) {
+    if (!Number.isFinite(duration) || duration <= 2) return 0.5;
+    return Math.min(duration * 0.5, 10);
   }
 
   function syncPlayback() {
@@ -318,8 +354,7 @@
       video.dataset.wbwePrimed = "1";
       const seek = () => {
         try {
-          const total = video.duration;
-          video.currentTime = Number.isFinite(total) && total > 2 ? Math.min(1.5, total * 0.15) : 0.5;
+          video.currentTime = stillFrameTime(video.duration);
         } catch {
           // 个别编码不支持 seek，保持原样即可
         }
@@ -567,7 +602,37 @@
     );
   }
 
+  // 把设置窗口恢复成**原生状态**：摘掉我们注入的一切
+  //（浮动按钮、选择器面板、壁纸层、壁纸样式、面板样式）。
+  //
+  // 为什么设置窗口不做玻璃：实测它自己的界面要 ~1.8 秒才渲染出来，
+  // 这段空白填壁纸也不舒服、留白也不舒服；而且用户在那里是来改设置的，
+  // 原生外观最不容易出问题。**保持原生是这个窗口上最省心的选择。**
+  function restoreSettingsWindow() {
+    for (const id of [FAB_ID, PANEL_ID, MEDIA_ID, "wb-we-skin-style", "wb-we-panel-style"]) {
+      const node = document.getElementById(id);
+      if (node) node.remove();
+    }
+    document.documentElement.classList.remove("wb-we-settings-open");
+    NS.mediaEl = null;
+    NS.mediaId = null;
+  }
+
+  // 设置窗口的 body 类**可能在注入之后**才被加上 —— 实测「新开设置窗口」就是这样：
+  // 注入那一刻 body 上还没有 settings-window，我们就按主窗口把壁纸/按钮都建好了，
+  // 而之后没人再来清理。所以盯一下 body 的 class，一旦变成设置窗口就立刻还原。
+  function watchSettingsWindow() {
+    if (NS.settingsWinObserver || !document.body) return;
+    NS.settingsWinObserver = new MutationObserver(() => {
+      if (!isSettingsWindow()) return;
+      restoreSettingsWindow();
+    });
+    NS.settingsWinObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  }
+
   function ensureChrome() {
+    if (isSettingsWindow()) return;
+
     let fab = document.getElementById(FAB_ID);
     if (!fab) {
       fab = document.createElement("button");
@@ -1181,6 +1246,15 @@
 
   function run() {
     if (!document.body) return;
+
+    // 设置窗口保持**完全原生**：不注入壁纸层，也不注入任何样式。
+    // 这里只做一件事 —— 把可能已经注入进去的东西摘干净（新开窗口时
+    // body 的 settings-window 类是晚加的，第一次进来这里可能还没认出来）。
+    if (isSettingsWindow()) {
+      restoreSettingsWindow();
+      return;
+    }
+
     NS.syncPlayback = syncPlayback;
     // 暴露给 MutationObserver / 定时器 / 注入标签的回调用：
     // 这些生命周期长于单次注入，闭包会锁死旧函数
@@ -1210,6 +1284,7 @@
     bindSettings();
     mountNewTabEntry();
     observeNewTab();
+    watchSettingsWindow();
     applyFabPosition();
     applyPanelPosition();
     syncPlayback();

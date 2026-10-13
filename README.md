@@ -260,6 +260,17 @@ node src/cli.mjs stop && node src/cli.mjs start
 .\install-skill.bat
 ```
 
+### 发版
+
+```bash
+node scripts/release.mjs 1.1.0 --notes "新增：视频倍速"
+```
+
+它会改版本号、写 CHANGELOG、重新打包，然后把后续 git 命令打印出来（**不替你推送**）。
+完整清单见 **[docs/RELEASING.md](docs/RELEASING.md)**。
+
+打包用的是自带的 `scripts/zip.mjs`（纯 Node，只用内置 zlib），不依赖 tar / PowerShell。
+
 ---
 
 ## 许可

@@ -82,6 +82,11 @@ export function buildProbe() {
   return `(() => {
     const ns = window.__wbWe;
     return {
+      // 区分主窗口 / 设置窗口。设置窗口我们**完全不注入**（保持原生），
+      // 不区分的话 status 可能取到它、报出"媒体层=false 当前=无"的假警报。
+      settingsWindow:
+        document.body.classList.contains("settings-window") ||
+        Boolean(document.querySelector(".settings-window-root")),
       panelStyle: Boolean(document.getElementById("wb-we-panel-style")),
       skinStyle: Boolean(document.getElementById("wb-we-skin-style")),
       media: Boolean(document.getElementById("wb-we-media")),
