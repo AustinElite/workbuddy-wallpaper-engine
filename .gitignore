@@ -1,0 +1,16 @@
+# 依赖
+node_modules/
+
+# 运行产物
+*.log
+*.zip
+
+# 编辑器 / IDE
+.vscode/
+.idea/
+*.swp
+
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,65 @@
+{
+  "name": "workbuddy-wallpaper-engine",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Local video/image wallpapers with iOS-style liquid glass for the WorkBuddy desktop app, via local CDP injection. Zero dependencies.",
+  "license": "MIT",
+  "author": "AustinElite",
+  "homepage": "https://github.com/AustinElite/workbuddy-wallpaper-engine#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AustinElite/workbuddy-wallpaper-engine.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AustinElite/workbuddy-wallpaper-engine/issues"
+  },
+  "keywords": [
+    "workbuddy",
+    "wallpaper",
+    "wallpaper-engine",
+    "live-wallpaper",
+    "video-wallpaper",
+    "liquid-glass",
+    "cdp",
+    "chrome-devtools-protocol",
+    "electron",
+    "skill",
+    "plugin",
+    "windows"
+  ],
+  "os": [
+    "win32"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "wbwe": "src/cli.mjs"
+  },
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "package.json",
+    "src/",
+    "scripts/",
+    "docs/",
+    "*.bat"
+  ],
+  "scripts": {
+    "apply": "node scripts/start-detached.mjs",
+    "serve": "node src/cli.mjs serve",
+    "stop": "node src/cli.mjs stop",
+    "status": "node src/cli.mjs status",
+    "list": "node src/cli.mjs list",
+    "doctor": "node src/cli.mjs doctor",
+    "skill": "node scripts/skill.mjs status",
+    "skill:install": "node scripts/skill.mjs install",
+    "skill:uninstall": "node scripts/skill.mjs uninstall",
+    "autostart": "node scripts/autostart.mjs status",
+    "autostart:install": "node scripts/autostart.mjs install",
+    "autostart:uninstall": "node scripts/autostart.mjs uninstall",
+    "check": "node --check src/cli.mjs && node --check src/engine.mjs && node --check scripts/watchdog.mjs"
+  }
+}

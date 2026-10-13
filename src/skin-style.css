@@ -1,0 +1,385 @@
+/* 壁纸样式：仅在选中壁纸时注入，未选壁纸时整块移除，WorkBuddy 保持原生外观。
+   令牌由 page-script.js 在运行时替换，因此玻璃透明度可以即时预览。 */
+
+:root {
+  --wbwe-accent: __ACCENT__;
+  --wbwe-surface: __SURFACE__;
+  --wbwe-text: __TEXT__;
+  --wbwe-title-fg: __TITLE_FG__;
+
+  /* WorkBuddy 自身的变量链是 --cb-sidebar-bg: var(--wb-sidebar-bg)，
+     即 --wb-sidebar-bg 是官方留出的覆盖钩子（默认 #252526 / 浅色 #f3f3f3）。
+     在 :root 上置空，所有读该变量的面板（含右侧编辑器/浏览器面板）一起透明。 */
+  --wb-sidebar-bg: transparent;
+  --cb-sidebar-bg: transparent;
+  --vscode-sideBar-background: transparent;
+}
+
+/* 应用把同一批变量又声明在 body 上（实测 body 的 --cb-sidebar-bg = #1f1f1f），
+   只改 :root 会被 body 覆盖掉。右侧编辑器 / 浏览器面板读的就是这个变量，
+   所以在 body 上用 !important 再压一次。 */
+html body {
+  --wb-sidebar-bg: transparent !important;
+  --cb-sidebar-bg: transparent !important;
+  --vscode-sideBar-background: transparent !important;
+}
+
+html, body { background: transparent !important; }
+
+/* ---------- 壁纸媒体层 ---------- */
+#wb-we-media {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: #05070a;
+}
+#wb-we-media > video,
+#wb-we-media > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+/* ---------- 把 WorkBuddy 的 --cb-* 变量接到壁纸上 ---------- */
+body[data-application-name=workbuddy] {
+  --cb-bg-primary: __SURFACE_ALPHA__ !important;
+  --cb-bg-secondary: __SURFACE_ALPHA__ !important;
+  --cb-panel-bg-primary: __PANEL_ALPHA__ !important;
+  --cb-team-member-card-background: __PANEL_ALPHA__ !important;
+
+  --cb-text-primary: var(--wbwe-text) !important;
+  --cb-text-secondary: color-mix(in srgb, var(--wbwe-text) 70%, transparent) !important;
+  --cb-text-disabled: color-mix(in srgb, var(--wbwe-text) 42%, transparent) !important;
+  --cb-text-link: var(--wbwe-accent) !important;
+
+  --cb-vscode-editor-background: __SURFACE_ALPHA__ !important;
+  --cb-vscode-sideBar-background: __PANEL_ALPHA__ !important;
+  --cb-vscode-foreground: var(--wbwe-text) !important;
+  --cb-vscode-editor-foreground: var(--wbwe-text) !important;
+  --cb-vscode-descriptionForeground: color-mix(in srgb, var(--wbwe-text) 70%, transparent) !important;
+  --cb-vscode-titleBar-activeBackground: var(--wbwe-accent) !important;
+  --cb-vscode-titleBar-activeForeground: var(--wbwe-title-fg) !important;
+  --cb-vscode-titleBar-inactiveBackground: color-mix(in srgb, var(--wbwe-accent) 80%, var(--wbwe-surface)) !important;
+  --cb-vscode-input-background: __PANEL_ALPHA__ !important;
+  --cb-vscode-dropdown-background: __PANEL_ALPHA__ !important;
+  --cb-vscode-list-hoverBackground: color-mix(in srgb, var(--wbwe-accent) 16%, transparent) !important;
+  --cb-vscode-toolbar-hoverBackground: color-mix(in srgb, var(--wbwe-accent) 16%, transparent) !important;
+  --cb-vscode-scrollbarSlider-background: color-mix(in srgb, var(--wbwe-accent) 30%, transparent) !important;
+  --cb-vscode-widget-border: color-mix(in srgb, var(--wbwe-accent) 45%, transparent) !important;
+  --cb-vscode-panel-border: color-mix(in srgb, var(--wbwe-accent) 30%, transparent) !important;
+  --cb-titlebar-control-hover-background: color-mix(in srgb, var(--wbwe-accent) 16%, transparent) !important;
+
+  --cb-button-dark-background: var(--wbwe-accent) !important;
+  --cb-button-dark-foreground: #ffffff !important;
+  --cb-vscode-button-background: var(--wbwe-accent) !important;
+  --cb-vscode-button-foreground: #ffffff !important;
+
+  --cb-stroke-secondary: color-mix(in srgb, var(--wbwe-accent) 45%, transparent) !important;
+  --cb-markdown-hr-border-color: color-mix(in srgb, var(--wbwe-accent) 30%, transparent) !important;
+}
+
+/* ---------- 承载层透明化，让壁纸透出 ----------
+   注意 [class*="_grid_"] 匹配不到 _gridView_11lon_9（CSS module 类名是 gridView，
+   grid 后面没有下划线），漏掉它会在顶栏下方留下一条 46% 的遮罩接缝，
+   导致「顶栏全透明、内容区偏暗」。所以两种写法都要列。 */
+.teams-container,
+.teams-container.is-mac,
+[data-view-id],
+.teams-grid-scroll-content,
+[class*="_grid_"],
+[class*="_gridView"],
+.conversation-shell,
+main,
+main[class],
+[class*="route"],
+.conversation-list,
+.main-content,
+.main-content--welcome {
+  background: transparent !important;
+}
+
+/* ---------- 液态玻璃层 ----------
+   左侧栏完全透明，壁纸直接透上来；靠文字投影保证可读性，不加底色、不加模糊。 */
+.sidebar-next,
+.conversation-sidebar,
+[data-view-id=sidebar] {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-right: 0 !important;
+  text-shadow: __TEXT_SHADOW__;
+  /* 应用内部有 !important 规则读这些变量当底色（特异性 0,3,0，拼不过），
+     直接把变量置空比逐元素覆盖更干净 */
+  --wb-sidebar-bg: transparent;
+  --cb-sidebar-bg: transparent;
+  --vscode-sideBar-background: transparent;
+}
+/* 右侧面板（任务详情 / 来源）保持液态玻璃，不做透明化。
+   注意：它们也带 data-view-id，会被上面的 [data-view-id] 透明规则扫到，
+   所以必须在这之后用同特异性的规则覆盖回来。 */
+[data-view-id=detail-panel],
+[data-view-id=sources-panel] {
+  background: __RIGHTGLASS__ !important;
+  backdrop-filter: blur(__BLUR__px) saturate(1.08);
+  -webkit-backdrop-filter: blur(__BLUR__px) saturate(1.08);
+  border-left: 1px solid color-mix(in srgb, var(--wbwe-accent) 34%, transparent) !important;
+}
+
+/* 右侧栏内层的实底拍透明，否则会盖住上面那层玻璃。
+   实测 .detail-panel 读 var(--wb-bg-primary) = #1f1f1f（应用自带的 --wb-* 皮肤层，
+   共 2000+ 个变量，逐个覆盖不现实，所以直接对元素下手）。 */
+.detail-panel,
+.detail-panel--no-header,
+.sidebar-next-main-header,
+.sidebar-next-body,
+[class*="_codePreviewContainer_"],
+[class*="codePreview"],
+/* 新标签页落地页（打开浏览器 / 查看工作空间 / 产物列表），实测 rgb(31,31,31) */
+.detail-new-tab-landing,
+[class*="new-tab-landing"],
+[class*="newTabLanding"] {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+[data-view-id=main-content] {
+  background: linear-gradient(180deg, transparent 0 62%, __SCRIM__ 100%) !important;
+}
+
+/* 侧栏内部的实底区块（分组标题、折叠头、邀请卡）一并透明，
+   否则它们会像补丁一样盖住壁纸 */
+:is(.conversation-sidebar, [data-view-id=sidebar], .sidebar-next)
+  :is(.conversation-section-label,
+      [class*="conversation-section-label"],
+      [class*="_header_"],
+      [class*="collapsible-sect"],
+      .conversation-list-invite-friends,
+      .conversation-list-invite-friends__card) {
+  background: transparent !important;
+}
+/* 输入框：聊天页与新对话页的 DOM 结构不同——新对话页的 .cr-input-container
+   不在 .conversation-input__box 里，所以按组件类直接命中。
+   实测实底来自 .cr-input-container{background:rgb(36,38,41)} 与 .cr-input-box__main 的渐变。
+   只给最外层 .cr-input-box 上玻璃，内层全部透明，避免多层叠加变得不透明。 */
+.cr-input-box,
+.conversation-input__box {
+  background: color-mix(in srgb, var(--wbwe-surface) 38%, transparent) !important;
+  background-image: none !important;
+  backdrop-filter: blur(20px) saturate(1.12);
+  -webkit-backdrop-filter: blur(20px) saturate(1.12);
+  border: 1px solid color-mix(in srgb, var(--wbwe-accent) 26%, transparent) !important;
+}
+.cr-input-box__main,
+.cr-input-container,
+.cr-input-container-wrapper,
+.cr-input-toolbar__right,
+.cr-input-box__toolbar,
+.conversation-input-area,
+.conversation-input-area__input-stack {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* 新对话页的其它实心块：场景切换标签（日常办公 / 代码开发，实测 rgb(36,36,36)）
+   与技能芯片（文档处理 / 金融服务…，实测 rgb(31,31,31)）。
+   改成轻玻璃，保留「可点」的视觉暗示。 */
+.wb-scene-tabs,
+.quick-actions__item {
+  background-color: color-mix(in srgb, var(--wbwe-surface) 30%, transparent) !important;
+  background-image: none !important;
+}
+/* ---------- 顶部标题栏：整条全透明 ----------
+   #workbuddy-menubar-container 是 position:fixed / z-index:10000 的 HTML 层，
+   透明化后壁纸能透出，且它始终盖在媒体层（z-index:0）之上，菜单不会被吃掉。
+   完全不加底色、不加模糊，只靠文字投影保证可读。 */
+#workbuddy-menubar-container,
+workbuddy-titlebar-left-slot,
+workbuddy-window-controls-container {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  text-shadow: __TEXT_SHADOW__;
+}
+/* 不画下边框：顶栏与内容区要"同一个透明度"，任何描边都会在 y=30 处留下一条接缝 */
+#workbuddy-menubar-container {
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+
+/* 菜单文字 */
+#workbuddy-menubar-container .menubar-menu-title,
+#workbuddy-menubar-container .menubar-menu-button,
+#workbuddy-menubar-container .codebuddy-menubar,
+#workbuddy-menubar-container .codebuddy-menubar .menubar-menu-title {
+  color: var(--wbwe-text) !important;
+  background: transparent !important;
+}
+#workbuddy-menubar-container .menubar-menu-button:hover,
+#workbuddy-menubar-container .menubar-menu-title:hover {
+  background: color-mix(in srgb, var(--wbwe-accent) 22%, transparent) !important;
+  border-radius: 5px;
+}
+
+/* 窗口控制键：从实心 accent 改为透明融入，悬停才给反馈 */
+.workbuddy-window-controls,
+.workbuddy-window-controls.inactive {
+  background: transparent !important;
+}
+.workbuddy-window-control-button {
+  background: transparent !important;
+  color: var(--wbwe-text) !important;
+}
+.workbuddy-window-control-button svg,
+.workbuddy-window-control-button svg path {
+  stroke: currentColor !important;
+  color: inherit !important;
+}
+.workbuddy-window-control-button:hover {
+  background: color-mix(in srgb, var(--wbwe-accent) 30%, transparent) !important;
+}
+.workbuddy-window-control-button.close:hover {
+  background: #e5484d !important;
+  color: #ffffff !important;
+}
+
+/* ---------- 文件编辑器 / 预览区（Monaco）融入壁纸 ----------
+   Monaco 的主题会把 .monaco-editor 与 .monaco-editor-background 刷成不透明深色
+   （实测 rgb(24,24,24)），这里全部拍透明，行号槽 .margin 也一并透明。 */
+.monaco-editor,
+.monaco-editor .overflow-guard,
+.monaco-editor .monaco-editor-background,
+.monaco-editor .lines-content,
+.monaco-editor .view-overlays,
+.monaco-editor .view-lines,
+.monaco-editor .margin,
+.monaco-editor .margin-view-overlays,
+.monaco-editor .current-line,
+.monaco-editor .scroll-decoration,
+.monaco-editor .decorationsOverviewRuler {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+/* 编辑器外壳、标签栏、预览面板 */
+.monaco-workbench,
+.monaco-workbench .part.editor,
+.monaco-workbench .editor-container,
+[class*="artifact-slot-panel"],
+[class*="artifact-tab"] {
+  background-color: transparent !important;
+}
+/* ---------- 聊天里的 markdown 表格 ----------
+   表头单元格实测是 rgb(20,21,24) 实底且**没有类名**，只能按父级 .cr-table-block 命中。
+   变量层已覆盖 --wb-table-* / --cb-markdown-table-header-bg，这里再兜一层元素规则。 */
+.cr-table-block th,
+.cr-table-block__inner th,
+[class*="table-block"] th,
+[class*="cr-table"] th {
+  background-color: color-mix(in srgb, var(--wbwe-surface) 30%, transparent) !important;
+  background-image: none !important;
+}
+
+/* ---------- 工具调用块（diff / 展开内容）与行内代码 ----------
+   实测 .cr-tool-diff__line 是 color(srgb .148 .186 .178) 这类实色，
+   .cr-tool-exp__content 是 rgb(42,44,49)。统一改成轻玻璃。 */
+.cr-tool-exp__content,
+.cr-tool-write__body,
+.cr-tool-diff,
+.cr-tool-diff__line,
+.cr-code-like-box,
+.cr-code-like-box__header,
+.cr-inline-code {
+  background-color: color-mix(in srgb, var(--wbwe-surface) 34%, transparent) !important;
+  background-image: none !important;
+}
+
+/* 透明底上滑块几乎看不见，压一点 accent 上去 */
+.monaco-editor .slider {
+  background-color: color-mix(in srgb, var(--wbwe-accent) 34%, transparent) !important;
+}
+
+/* ---------- 浮层：下拉 / 弹窗 / 菜单 / 气泡 / 提示 ----------
+   实测这些浮层的实底全部来自应用自带的组件变量（--cb-context-popover-bg = #1f2128、
+   --cb-dropdown-bg-color = #1f1f1f、--cb-dialog-bg = #242424、--wb-bg-popover = #242424 …）。
+   逐个元素命中不现实（浮层点击才出现、类名带 hash），直接覆盖变量最彻底。
+   变量同时存在于 --cb-* 与 --wb-* 两层，两层都要改。 */
+html body {
+  --cb-context-popover-bg: __POPOVER_BG__ !important;
+  --cb-dropdown-bg-color: __POPOVER_BG__ !important;
+  --cb-dialog-bg: __POPOVER_BG__ !important;
+  --cb-modal-background: __POPOVER_BG__ !important;
+  --cb-popover-background: __POPOVER_BG__ !important;
+  --cb-popover-background-fc: __POPOVER_BG__ !important;
+  --cb-popover-bg: __POPOVER_BG__ !important;
+  --cb-popover-bg-color: __POPOVER_BG__ !important;
+  --cb-popover-bg-color-fc: __POPOVER_BG__ !important;
+  --cb-popover-bg-fc: __POPOVER_BG__ !important;
+  --cb-update-toast-bg: __POPOVER_BG__ !important;
+
+  --wb-bg-popover: __POPOVER_BG__ !important;
+  --wb-bg-popover-picker: __POPOVER_BG__ !important;
+  --wb-bg-modal: __POPOVER_BG__ !important;
+  --wb-modal-bg: __POPOVER_BG__ !important;
+  --wb-color-bg-modal: __POPOVER_BG__ !important;
+  --wb-cascader-popover-bg: __POPOVER_BG__ !important;
+  --wb-dropdown-bg-color: __POPOVER_BG__ !important;
+  --wb-dropdown-bg-color-fc: __POPOVER_BG__ !important;
+  --wb-kb-dialog-bg: __POPOVER_BG__ !important;
+  --wb-modal-panel-bg: __POPOVER_BG__ !important;
+  --wb-drawer-panel-bg: __POPOVER_BG__ !important;
+  --cb-question-floating-card-bg: __POPOVER_BG__ !important;
+  --wb-question-floating-card-bg: __POPOVER_BG__ !important;
+
+  /* 聊天气泡 / 卡片 / 内容块 */
+  --cb-user-bubble-bg: __POPOVER_BG__ !important;
+  --cb-bg-card: __POPOVER_BG__ !important;
+  --cb-panel-bg-secondary: __POPOVER_BG__ !important;
+  --cb-hover-card-bg-color: __POPOVER_BG__ !important;
+  --wb-bg-card: __POPOVER_BG__ !important;
+  --wb-bg-card-strong: __POPOVER_BG__ !important;
+  --wb-card-bg: __POPOVER_BG__ !important;
+  --wb-bg-content: __POPOVER_BG__ !important;
+  --wb-collapse-content-color-bg: __POPOVER_BG__ !important;
+  --wb-message-color-bg: __POPOVER_BG__ !important;
+  --wb-home-composer-card-bg: __POPOVER_BG__ !important;
+  --wb-home-composer-sub-card-bg: __POPOVER_BG__ !important;
+  --wb-voice-input-card-bg: __POPOVER_BG__ !important;
+  --wb-kb-card-bg-soft: __POPOVER_BG__ !important;
+  --wb-color-bg-card-hover: __POPOVER_BG__ !important;
+
+  /* 表格 */
+  --cb-markdown-table-header-bg: __POPOVER_BG__ !important;
+  --wb-table-bg: __POPOVER_BG__ !important;
+  --wb-table-header-bg: __POPOVER_BG__ !important;
+  --wb-table-fixed-th-bg: __POPOVER_BG__ !important;
+  --wb-table-fixed-td-bg: __POPOVER_BG__ !important;
+  --wb-table-striped-bg: __POPOVER_BG__ !important;
+  --wb-table-fixed-td-striped-bg: __POPOVER_BG__ !important;
+  --wb-table-sort-hover-bg: __POPOVER_BG__ !important;
+  --wb-table-striped-hover-bg: __POPOVER_BG__ !important;
+
+  /* 代码块头 / 分享栏 */
+  --cb-markdown-code-block-header-bg: __POPOVER_BG__ !important;
+  --wb-share-bar-bg: __POPOVER_BG__ !important;
+}
+
+/* 只改透明度还不够：半透明底会让下层文字透出来显脏，必须配 backdrop-filter 才是"液态玻璃"。
+   浮层类名带 hash，用类名模式匹配兜住。 */
+:is([class*="popover"],
+    [class*="dropdown"],
+    [class*="dialog"],
+    [class*="modal"],
+    [class*="popup"],
+    [class*="tooltip"],
+    [class*="cascader"],
+    [class*="context-menu"]) {
+  backdrop-filter: blur(24px) saturate(1.15) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.15) !important;
+}
+
+/* ---------- 聊天里的代码块 ----------
+   实测底色是 rgb(26,27,30) / 表头 rgb(20,21,24)。具体规则见下方
+   「工具调用块与行内代码」那一组，这里不再重复声明。 */

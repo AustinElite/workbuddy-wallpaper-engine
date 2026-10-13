@@ -1,0 +1,19 @@
+# 默认按文本处理，仓库内统一用 LF
+* text=auto eol=lf
+
+# Windows 批处理必须是 CRLF。
+# cmd.exe 对 LF 结尾的多行 if (...) 块解析不可靠，纯 LF 的 bat 在别人机器上可能直接跑不起来。
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制资源，禁止任何换行转换
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.mp4  binary
+*.webm binary
+*.mov  binary
+*.zip  binary
